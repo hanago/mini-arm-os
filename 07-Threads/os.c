@@ -56,7 +56,7 @@ void simple_shell()
 
 		else if(strcmp(argv[0],"help") == 0)
 		{
-            print_str("\fibonacci_thread %d\n");
+            print_str("\tfibonacci_thread %d\n");
             print_str("\tfibonacci %d\n");
             print_str("\thelp\n");
             print_str("\tgreeting\n");
