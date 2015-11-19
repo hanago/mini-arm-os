@@ -131,5 +131,5 @@ void thread_self_terminal()
 	asm volatile("cpsie i\n");
 
 	/* And now wait for death to kick in */
-	while (1);
+	//while (1);
 }

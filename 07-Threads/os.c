@@ -1,69 +1,73 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <ctype.h>
+
 #include "reg.h"
 #include "threads.h"
 
-/* USART TXE Flag
- * This flag is cleared when data is written to USARTx_DR and
- * set when that data is transferred to the TDR
- */
-#define USART_FLAG_TXE	((uint16_t) 0x0080)
+#include "asm.h"
+#include "usart.h"
+#include "string.h"
 
-void usart_init(void)
-{
-	*(RCC_APB2ENR) |= (uint32_t) (0x00000001 | 0x00000004);
-	*(RCC_APB1ENR) |= (uint32_t) (0x00020000);
-
-	/* USART2 Configuration, Rx->PA3, Tx->PA2 */
-	*(GPIOA_CRL) = 0x00004B00;
-	*(GPIOA_CRH) = 0x44444444;
-	*(GPIOA_ODR) = 0x00000000;
-	*(GPIOA_BSRR) = 0x00000000;
-	*(GPIOA_BRR) = 0x00000000;
-
-	*(USART2_CR1) = 0x0000000C;
-	*(USART2_CR2) = 0x00000000;
-	*(USART2_CR3) = 0x00000000;
-	*(USART2_CR1) |= 0x2000;
+/* Homework: Simple shell */
+void thread_fibonacci(void *userdata){
+	int result = fibonacci(str2int(userdata));
+	print_str("fibonacci(");
+	print_str(userdata);
+	print_str(") = ");
+	print_int(result);
+	print_c('\n');
 }
 
-void print_str(const char *str)
+void simple_shell()
 {
-	while (*str) {
-		while (!(*(USART2_SR) & USART_FLAG_TXE));
-		*(USART2_DR) = (*str & 0xFF);
-		str++;
+	char buffer[100];
+	char *argv[5];
+	int argc;
+
+	while(1){
+		*(argv[0]) = '\0';
+		print_str("$ ");
+		get_str(buffer, 99);
+
+		/* Get arguments. */
+		argv[0] = cmdtok(buffer);
+		argc = 1;
+		while(*buffer && argc < 5){
+			argv[argc] = cmdtok(NULL);
+			argc++;
+		}
+
+		/* Decode and execute command. */
+		if(*(argv[0]) == '\0')
+			continue;
+
+		else if (strcmp(argv[0],"fibonacci_thread") == 0)
+			thread_create(thread_fibonacci, (void *) argv[1]);
+
+		else if (strcmp(argv[0],"fibonacci") == 0)
+			thread_fibonacci((void *) argv[1]);
+
+		else if(strcmp(argv[0],"greeting") == 0)
+            print_str("Hello, i'm simple shell!\n");
+
+		else if(strcmp(argv[0],"exit") == 0)
+            print_str("Press \"Ctrl + a\" and then \"x\" to terminate qemu.\n");
+
+		else if(strcmp(argv[0],"help") == 0)
+		{
+            print_str("\fibonacci_thread %d\n");
+            print_str("\tfibonacci %d\n");
+            print_str("\thelp\n");
+            print_str("\tgreeting\n");
+            print_str("\texit\n");
+		}
+		else{
+			print_str(argv[0]);
+			print_str(":Command not found\n");
+		}
 	}
-}
 
-static void delay(volatile int count)
-{
-	count *= 50000;
-	while (count--);
-}
-
-static void busy_loop(void *str)
-{
-	while (1) {
-		print_str(str);
-		print_str(": Running...\n");
-		delay(1000);
-	}
-}
-
-void test1(void *userdata)
-{
-	busy_loop(userdata);
-}
-
-void test2(void *userdata)
-{
-	busy_loop(userdata);
-}
-
-void test3(void *userdata)
-{
-	busy_loop(userdata);
 }
 
 /* 72MHz */
@@ -74,18 +78,12 @@ void test3(void *userdata)
 
 int main(void)
 {
-	const char *str1 = "Task1", *str2 = "Task2", *str3 = "Task3";
+	const char *str1 = "simple_shell";
 
 	usart_init();
 
-	if (thread_create(test1, (void *) str1) == -1)
-		print_str("Thread 1 creation failed\r\n");
-
-	if (thread_create(test2, (void *) str2) == -1)
-		print_str("Thread 2 creation failed\r\n");
-
-	if (thread_create(test3, (void *) str3) == -1)
-		print_str("Thread 3 creation failed\r\n");
+	if (thread_create(simple_shell, (void *) str1) == -1)
+		print_str("simple_shell creation failed\r\n");
 
 	/* SysTick configuration */
 	*SYSTICK_LOAD = (CPU_CLOCK_HZ / TICK_RATE_HZ) - 1UL;
