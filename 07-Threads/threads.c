@@ -1,5 +1,6 @@
-#include <stdint.h>
 #include "threads.h"
+
+#include <stdint.h>
 #include "os.h"
 #include "malloc.h"
 #include "reg.h"

@@ -1,7 +1,7 @@
+#include "usart.h"
+
 #include <stdint.h>
 #include "reg.h"
-
-#include "usart.h"
 #include "string.h"
 
 /* USART TXE Flag
