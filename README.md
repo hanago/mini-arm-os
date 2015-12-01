@@ -44,6 +44,11 @@ make
 make qemu
 ```
 
+* You can use genromfs to generate rom file system image.
+```
+http://romfs.sourceforge.net/
+```
+
 Licensing
 ---------
 `mini-arm-os` is freely redistributable under the two-clause BSD License.
@@ -53,3 +58,4 @@ in the `LICENSE` file.
 Reference
 ---------
 * [Baking Pi – Operating Systems Development](http://www.cl.cam.ac.uk/projects/raspberrypi/tutorials/os/)
+* [romfs information](http://romfs.sourceforge.net/)

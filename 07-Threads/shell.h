@@ -8,14 +8,13 @@ void simple_shell();
 void fibonacci_shell(int argc, char* argv[]);
 void fibonacciThread_shell(int argc, char* argv[]);
 
-/* Homework8 /
+/* Homework8 */
 // path
 void ls_shell(int argc, char* argv[]);
-void cat_shell(int argc, char* argv[]);
 void pwd_shell(int argc, char* argv[]);
 void cd_shell(int argc, char* argv[]);
 // text viewer
-void view_shell(int argc, char* argv[]);*/
+void view_shell(int argc, char* argv[]);
 
 /* Other commands */
 void greeting_shell(int argc, char* argv[]);

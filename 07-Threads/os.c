@@ -18,7 +18,7 @@
 int main(void)
 {
 	const char *str1 = "simple_shell";
-
+	
 	usart_init();
 
 	if (thread_create(simple_shell, (void *) str1) == -1)

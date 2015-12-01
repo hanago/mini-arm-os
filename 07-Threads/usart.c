@@ -46,6 +46,20 @@ void print_int(int num)
 	print_str(itoa(num));
 }
 
+void print_u32(uint32_t num){
+	print_str("0x");
+	
+	int i;
+	char byte;
+	for(i = 7; i >= 0; i--){
+		byte = (char)((num >> (i*4)) & 0x000F);
+		if(byte >= 10)
+			print_c(byte + 'A');
+		else
+			print_c(byte + '0');
+	}
+}
+
 /* Get */
 char get_c() {
 	char c;

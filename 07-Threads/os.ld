@@ -2,7 +2,8 @@ ENTRY(reset_handler)
 
 MEMORY
 {
-	FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 128K
+	FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 64K
+	ROMFS (rx) : ORIGIN = 0X08010000, LENGTH = 64K
 	RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 40K
 }
 
@@ -13,12 +14,19 @@ SECTIONS
 		KEEP(*(.isr_vector))
 		*(.text)
 		*(.text.*)
+		_sromdev = .;
 		*(.rodata)
 		*(.rodata.*)
-		_sromdev = .;
 		_eromdev = .;
 		_sidata = .;
 	} >FLASH
+
+	__romfs_start__ =.;
+	.romfs.data :
+	 {
+	    *(.romfs.data)
+	} >ROMFS
+	__romfs_end__ =.;
 
 	.data : AT(_sidata)
 	{

@@ -8,18 +8,20 @@
 #include "usart.h"
 #include "asm.h"
 
+#include "romfs.h"
+
 /** Copy from rtenv+ **/
-#define MAX_CMDNAME 19
+#define MAX_CMDNAME  19
+#define MAX_DESCRIBE 20
 
 /* Enumeration for command types. */
 enum {
   CMD_FIBONACCI = 0,
   CMD_FIBONACCITHREAD,
-  //CMD_LS,
-  //CMD_CAT,
-  //CMD_CD,
-  //CMD_PWD,
-  //CMD_VIEW,
+  CMD_LS,
+  CMD_CD,
+  CMD_PWD,
+  CMD_VIEW,
   CMD_GREETING,
   CMD_EXIT,
   CMD_HELP,
@@ -30,17 +32,17 @@ enum {
 typedef struct {
   char cmd[MAX_CMDNAME + 1];
   void (*func)(int, char**);
+  char describe[MAX_DESCRIBE + 1];
 } hcmd_entry;
 
 const hcmd_entry cmd_data[CMD_COUNT] = {
-  [CMD_FIBONACCI] = {.cmd = "fibonacci", .func = fibonacci_shell},
-  [CMD_FIBONACCITHREAD] = {.cmd = "fibonacciThread", .func = fibonacciThread_shell},
-  //[CMD_LS] = {.cmd = "fibonacciThread", .func = export_envvar},
-  //[CMD_CAT] = {.cmd = "fibonacciThread", .func = export_envvar},
-  //[CMD_CD] = {.cmd = "fibonacciThread", .func = export_envvar},
-  //[CMD_PWD] = {.cmd = "fibonacciThread", .func = export_envvar},
-  //[CMD_VIEW] = {.cmd = "fibonacciThread", .func = export_envvar},
-  [CMD_GREETING] = {.cmd = "greeeting", .func = greeting_shell}, 
+  [CMD_FIBONACCI] = {.cmd = "fibonacci", .func = fibonacci_shell, .describe=" %d"},
+  [CMD_FIBONACCITHREAD] = {.cmd = "fibonacciThread", .func = fibonacciThread_shell,  .describe=" %d"},
+  [CMD_LS] = {.cmd = "ls", .func = ls_shell, .describe=""},
+  [CMD_CD] = {.cmd = "cd", .func = cd_shell, .describe=" %path"},
+  [CMD_PWD] = {.cmd = "pwd", .func = pwd_shell, .describe=""},
+  [CMD_VIEW] = {.cmd = "view", .func = view_shell, .describe=" %path"},
+  [CMD_GREETING] = {.cmd = "greeting", .func = greeting_shell}, 
   [CMD_EXIT] = {.cmd = "exit", .func = exit_shell},
   [CMD_HELP] = {.cmd = "help", .func = help_shell},
 };
@@ -51,6 +53,24 @@ void simple_shell()
   char *argv[5];
   int argc, i;
 
+  if(init_romfs()){
+    print_str("[init]ROMFS open\n");
+    char* path = "/tmp/min-os";
+    if(findnode_romfs(path)){
+      print_str("find ");print_str(path);print_str("\n");
+      romf* fp;
+      fp = fopen_romfs("/init");
+      if(fp){
+        print_str("open init\n");
+        print_c(fread_c_romfs(fp));
+        print_str(fread_str_romfs(fp));
+        print_str("\n");
+        fclose_romfs(fp);
+      }
+     show_dirlist_romfs(path);
+   }
+  }
+
   while(1){
     /* Get user input */
     *(argv[0]) = '\0';
@@ -60,10 +80,12 @@ void simple_shell()
     /* Get arguments. */
     argv[0] = cmdtok(buffer);
     argc = 1;
-    while(*buffer && argc < 5){
+    do{
       argv[argc] = cmdtok(NULL);
+      if(!(argv[argc]) || argc > 5)
+        break;
       argc++;
-    }
+    }while(1);
 
     /* Decode and execute command. */
     if(*(argv[0]) == '\0')
@@ -80,7 +102,6 @@ void simple_shell()
       print_str(":Command not found\n");
     }
   }
-
 }
 
 /* Privative function: Shell commands */
@@ -106,26 +127,49 @@ void fibonacciThread_shell(int argc, char* argv[]){
   thread_create(fibonacciThread, (void *) argv[1]);
 }
 
-/* Homework8 /
+/* Homework8 */ //Still not support relative addres.
+#define MAX_PATH 50
+static char nowPath[MAX_PATH] = "/.";
 void ls_shell(int argc, char* argv[]){
-
-}
-
-void cat_shell(int argc, char* argv[]){
-
+  show_dirlist_romfs(nowPath);
 }
 
 void pwd_shell(int argc, char* argv[]){
-
+  print_str(nowPath);
+  print_c('\n');
 }
 
 void cd_shell(int argc, char* argv[]){
+  int i;
+  if(argc > 2){
+    print_str("Invalid commands\n");
+    return;
+  }
 
+  for(i=0; *(argv[1]+i) && i < 50;i++)
+    *(nowPath+i) = *(argv[1]+i);
+  *(nowPath+i) = '\0';
 }
 
 void view_shell(int argc, char* argv[]){
+    if(argc > 2){
+      print_str("Invalid commands\n");
+      return;
+    }
 
-}*/
+    romf* fp = fopen_romfs(argv[1]);
+    if(!fp){
+      print_str("Can not open the file\n");
+      return;
+    }
+
+    char* ptr = NULL;
+    do{
+      ptr = fread_str_romfs(fp);
+      print_str(ptr);
+    }while(*ptr);
+    print_c('\n');
+}
 
 /* Other commands */
 void greeting_shell(int argc, char* argv[]){
@@ -137,10 +181,11 @@ void exit_shell(int argc, char* argv[]){
 }
 
 void help_shell(int argc, char* argv[]){
-  print_str("\tfibonacciThread %d\n");
-  print_str("\tfibonacci %d\n");
-  print_str("\thelp\n");
-  print_str("\tgreeting\n");
-  print_str("\texit\n");
+  int i;
+  for(i = 0; i < CMD_COUNT; i++){
+    print_str(cmd_data[i].cmd);
+    print_str(cmd_data[i].describe);
+    print_c('\n');
+  }
 }
 
